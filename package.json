@@ -3,10 +3,10 @@
   "private": false,
   "version": "2.0.4",
   "type": "module",
-  "author": "Yurii Zarytskyi",
+  "author": "Yurii Zarytskyi & Neil Fisher",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YZarytskyi/react-voice-visualizer.git"
+    "url": "git+https://github.com/NeilTheFisher/react-voice-visualizer.git"
   },
   "description": "React library for audio recording and visualization using Web Audio API",
   "license": "MIT",
