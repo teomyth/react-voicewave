@@ -50,6 +50,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "prepare_release": "mkdir react-voice-visualizer && cp -r dist react-voice-visualizer && cp LICENSE package.json README.md react-voice-visualizer && tar -zcvf react-voice-visualizer.tar.gz react-voice-visualizer && rm -rf react-voice-visualizer",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
