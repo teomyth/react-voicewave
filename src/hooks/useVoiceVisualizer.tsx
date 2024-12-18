@@ -217,8 +217,6 @@ function useVoiceVisualizer({
   };
 
   const stopRecording = () => {
-    if (!isRecordingInProgress) return;
-
     setIsRecordingInProgress(false);
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
