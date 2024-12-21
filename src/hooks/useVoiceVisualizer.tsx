@@ -19,6 +19,7 @@ function useVoiceVisualizer({
   onPausedAudioPlayback,
   onResumedAudioPlayback,
   onErrorPlayingAudio,
+  warnBeforeUnload = true,
 }: useVoiceVisualizerParams = {}): Controls {
   const [isRecordingInProgress, setIsRecordingInProgress] = useState(false);
   const [isPausedRecording, setIsPausedRecording] = useState(false);
@@ -91,6 +92,13 @@ function useVoiceVisualizer({
   }, []);
 
   useEffect(() => {
+    if (!warnBeforeUnload) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
     if (!isCleared) {
       window.addEventListener("beforeunload", handleBeforeUnload);
     }
@@ -98,12 +106,7 @@ function useVoiceVisualizer({
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isCleared]);
-
-  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-    e.preventDefault();
-    e.returnValue = "";
-  };
+  }, [warnBeforeUnload, isCleared]);
 
   const processBlob = async (blob: Blob) => {
     if (!blob) return;
