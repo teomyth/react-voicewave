@@ -23,7 +23,6 @@ function useVoiceVisualizer({
 }: useVoiceVisualizerParams = {}): Controls {
   const [isRecordingInProgress, setIsRecordingInProgress] = useState(false);
   const [isPausedRecording, setIsPausedRecording] = useState(false);
-  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [audioData, setAudioData] = useState<Uint8Array>(new Uint8Array(0));
   const [isProcessingAudioOnComplete, _setIsProcessingAudioOnComplete] =
     useState(false);
@@ -43,6 +42,7 @@ function useVoiceVisualizer({
   const [isProcessingStartRecording, setIsProcessingStartRecording] =
     useState(false);
 
+  const audioStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -160,7 +160,7 @@ function useVoiceVisualizer({
         setIsProcessingStartRecording(false);
         setIsRecordingInProgress(true);
         setPrevTime(performance.now());
-        setAudioStream(stream);
+        audioStreamRef.current = stream;
         audioContextRef.current = new window.AudioContext();
         analyserRef.current = audioContextRef.current.createAnalyser();
         dataArrayRef.current = new Uint8Array(
@@ -228,7 +228,7 @@ function useVoiceVisualizer({
         handleDataAvailable
       );
     }
-    audioStream?.getTracks().forEach((track) => track.stop());
+    audioStreamRef.current?.getTracks().forEach((track) => track.stop());
     if (rafRecordingRef.current) cancelAnimationFrame(rafRecordingRef.current);
     if (sourceRef.current) sourceRef.current.disconnect();
     if (audioContextRef.current && audioContextRef.current.state !== "closed") {
@@ -258,7 +258,8 @@ function useVoiceVisualizer({
       mediaRecorderRef.current = null;
     }
 
-    audioStream?.getTracks().forEach((track) => track.stop());
+    audioStreamRef.current?.getTracks().forEach((track) => track.stop());
+    audioStreamRef.current = null;
     if (audioRef?.current) {
       audioRef.current.removeEventListener("ended", onEndedRecordedAudio);
       audioRef.current.pause();
@@ -270,7 +271,6 @@ function useVoiceVisualizer({
     dataArrayRef.current = null;
     sourceRef.current = null;
 
-    setAudioStream(null);
     setIsProcessingStartRecording(false);
     setIsRecordingInProgress(false);
     setIsPreloadedBlob(false);
