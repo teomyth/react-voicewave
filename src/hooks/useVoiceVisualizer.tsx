@@ -19,7 +19,7 @@ function useVoiceVisualizer({
   onPausedAudioPlayback,
   onResumedAudioPlayback,
   onErrorPlayingAudio,
-  warnBeforeUnload = true,
+  shouldHandleBeforeUnload = true,
 }: useVoiceVisualizerParams = {}): Controls {
   const [isRecordingInProgress, setIsRecordingInProgress] = useState(false);
   const [isPausedRecording, setIsPausedRecording] = useState(false);
@@ -92,21 +92,19 @@ function useVoiceVisualizer({
   }, []);
 
   useEffect(() => {
-    if (!warnBeforeUnload) return;
-
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-
-    if (!isCleared) {
+    if (!isCleared && shouldHandleBeforeUnload) {
       window.addEventListener("beforeunload", handleBeforeUnload);
     }
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [warnBeforeUnload, isCleared]);
+  }, [isCleared, shouldHandleBeforeUnload]);
+
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    e.preventDefault();
+    e.returnValue = "";
+  };
 
   const processBlob = async (blob: Blob) => {
     if (!blob) return;
@@ -307,6 +305,36 @@ function useVoiceVisualizer({
     }
   };
 
+  const startAudioPlayback = () => {
+    if (!audioRef.current || isRecordingInProgress) return;
+
+    requestAnimationFrame(handleTimeUpdate);
+    startPlayingAudio();
+    audioRef.current.addEventListener("ended", onEndedRecordedAudio);
+    setIsPausedRecordedAudio(false);
+    if (onStartAudioPlayback && currentAudioTime === 0) {
+      onStartAudioPlayback();
+    }
+    if (onResumedAudioPlayback && currentAudioTime !== 0) {
+      onResumedAudioPlayback();
+    }
+  };
+
+  const stopAudioPlayback = () => {
+    if (!audioRef.current || isRecordingInProgress) return;
+
+    if (rafCurrentTimeUpdateRef.current) {
+      cancelAnimationFrame(rafCurrentTimeUpdateRef.current);
+    }
+    audioRef.current.removeEventListener("ended", onEndedRecordedAudio);
+    audioRef.current.pause();
+    setIsPausedRecordedAudio(true);
+    const newCurrentTime = audioRef.current.currentTime;
+    setCurrentAudioTime(newCurrentTime);
+    audioRef.current.currentTime = newCurrentTime;
+    if (onPausedAudioPlayback) onPausedAudioPlayback();
+  };
+
   const togglePauseResume = () => {
     if (isRecordingInProgress) {
       setIsPausedRecording((prevPaused) => !prevPaused);
@@ -327,29 +355,7 @@ function useVoiceVisualizer({
     }
 
     if (audioRef.current && isAvailableRecordedAudio) {
-      if (audioRef.current.paused) {
-        requestAnimationFrame(handleTimeUpdate);
-        startPlayingAudio();
-        audioRef.current.addEventListener("ended", onEndedRecordedAudio);
-        setIsPausedRecordedAudio(false);
-        if (onStartAudioPlayback && currentAudioTime === 0) {
-          onStartAudioPlayback();
-        }
-        if (onResumedAudioPlayback && currentAudioTime !== 0) {
-          onResumedAudioPlayback();
-        }
-      } else {
-        if (rafCurrentTimeUpdateRef.current) {
-          cancelAnimationFrame(rafCurrentTimeUpdateRef.current);
-        }
-        audioRef.current.removeEventListener("ended", onEndedRecordedAudio);
-        audioRef.current.pause();
-        setIsPausedRecordedAudio(true);
-        const newCurrentTime = audioRef.current.currentTime;
-        setCurrentAudioTime(newCurrentTime);
-        audioRef.current.currentTime = newCurrentTime;
-        if (onPausedAudioPlayback) onPausedAudioPlayback();
-      }
+      audioRef.current.paused ? startAudioPlayback() : stopAudioPlayback();
     }
   };
 
@@ -396,6 +402,8 @@ function useVoiceVisualizer({
     formattedRecordedAudioCurrentTime,
     startRecording,
     togglePauseResume,
+    startAudioPlayback,
+    stopAudioPlayback,
     stopRecording,
     saveAudioFile,
     clearCanvas,

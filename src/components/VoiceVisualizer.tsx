@@ -131,7 +131,7 @@ const VoiceVisualizer = ({
   const [canvasCurrentHeight, setCanvasCurrentHeight] = useState(0);
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [isRecordedCanvasHovered, setIsRecordedCanvasHovered] = useState(false);
-  const [screenWidth] = useState(window.innerWidth);
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [isResizing, setIsResizing] = useState(false);
 
   const isMobile = screenWidth < 768;
@@ -162,32 +162,10 @@ const VoiceVisualizer = ({
   const debouncedOnResize = useDebounce(onResize);
 
   useEffect(() => {
-    onResize();
-
     if (!canvasContainerRef.current) return;
 
-    const rect = canvasContainerRef.current.getBoundingClientRect();
-    const canvasContainerDimensions = {
-      width: rect.width,
-      height: rect.height,
-    };
-
-    const handleResize: ResizeObserverCallback = (entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-
-      const roundedWidth = Math.round(entry.contentRect.width);
-      const roundedHeight = Math.round(entry.contentRect.height);
-
-      if (
-        roundedWidth === canvasContainerDimensions.width &&
-        roundedHeight === canvasContainerDimensions.height
-      ) {
-        return;
-      }
-
-      canvasContainerDimensions.width = roundedWidth;
-      canvasContainerDimensions.height = roundedHeight;
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
 
       if (isAvailableRecordedAudio) {
         _setIsProcessingOnResize(true);
@@ -440,6 +418,7 @@ const VoiceVisualizer = ({
             <AudioWaveIcon color={defaultAudioWaveIconColor} />
             <AudioWaveIcon color={defaultAudioWaveIconColor} reflect />
             <button
+              type="button"
               onClick={startRecording}
               className="voice-visualizer__canvas-microphone-btn"
             >
@@ -540,6 +519,7 @@ const VoiceVisualizer = ({
             {isRecordingInProgress && (
               <div className="voice-visualizer__btn-container">
                 <button
+                  type="button"
                   className={`voice-visualizer__btn-left ${
                     isPausedRecording
                       ? "voice-visualizer__btn-left-microphone"
@@ -556,6 +536,7 @@ const VoiceVisualizer = ({
             )}
             {!isCleared && (
               <button
+                type="button"
                 className={`voice-visualizer__btn-left ${
                   isRecordingInProgress || isProcessingStartRecording
                     ? "voice-visualizer__visually-hidden"
@@ -572,6 +553,7 @@ const VoiceVisualizer = ({
             )}
             {isCleared && (
               <button
+                type="button"
                 className={`voice-visualizer__btn-center voice-visualizer__relative ${
                   isProcessingStartRecording
                     ? "voice-visualizer__btn-center--border-transparent"
@@ -589,6 +571,7 @@ const VoiceVisualizer = ({
               </button>
             )}
             <button
+              type="button"
               className={`voice-visualizer__btn-center voice-visualizer__btn-center-pause ${
                 !isRecordingInProgress
                   ? "voice-visualizer__visually-hidden"
@@ -600,6 +583,7 @@ const VoiceVisualizer = ({
             </button>
             {!isCleared && (
               <button
+                type="button"
                 onClick={clearCanvas}
                 className={`voice-visualizer__btn ${
                   controlButtonsClassName ?? ""
@@ -611,6 +595,7 @@ const VoiceVisualizer = ({
             )}
             {isDownloadAudioButtonShown && recordedBlob && (
               <button
+                type="button"
                 onClick={saveAudioFile}
                 className={`voice-visualizer__btn ${
                   controlButtonsClassName ?? ""

@@ -26,6 +26,8 @@ export interface Controls {
   formattedRecordedAudioCurrentTime: string;
   startRecording: () => void;
   togglePauseResume: () => void;
+  startAudioPlayback: () => void;
+  stopAudioPlayback: () => void;
   stopRecording: () => void;
   saveAudioFile: () => void;
   clearCanvas: () => void;
@@ -117,8 +119,7 @@ export interface useVoiceVisualizerParams {
   onPausedAudioPlayback?: () => void;
   onResumedAudioPlayback?: () => void;
   onErrorPlayingAudio?: (error: Error) => void;
-  /** @default true */
-  warnBeforeUnload?: boolean;
+  shouldHandleBeforeUnload?: boolean;
 }
 
 export interface UseWebWorkerParams<T> {
