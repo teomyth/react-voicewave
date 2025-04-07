@@ -64,6 +64,7 @@ interface VoiceVisualizerProps {
   isAudioProcessingTextShown?: boolean;
   audioProcessingTextClassName?: string;
   controlButtonsClassName?: string;
+  enableWebWorker?: boolean;
 }
 
 const VoiceVisualizer = ({
@@ -125,6 +126,7 @@ const VoiceVisualizer = ({
   isAudioProcessingTextShown = true,
   audioProcessingTextClassName,
   controlButtonsClassName,
+  enableWebWorker = true,
 }: VoiceVisualizerProps) => {
   const [hoveredOffsetX, setHoveredOffsetX] = useState(0);
   const [canvasCurrentWidth, setCanvasCurrentWidth] = useState(0);
@@ -133,6 +135,7 @@ const VoiceVisualizer = ({
   const [isRecordedCanvasHovered, setIsRecordedCanvasHovered] = useState(false);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [isResizing, setIsResizing] = useState(false);
+  const [barsData, setBarsData] = useState<BarsData[]>([]);
 
   const isMobile = screenWidth < 768;
   const formattedSpeed = Math.trunc(speed);
@@ -149,17 +152,14 @@ const VoiceVisualizer = ({
   const index2Ref = useRef(formattedBarWidth);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const {
-    result: barsData,
-    setResult: setBarsData,
-    run,
-  } = useWebWorker<BarsData[], GetBarsDataParams>({
+  const debouncedOnResize = useDebounce(onResize);
+
+  // Always initialize WebWorker hook, but only use it if enabled
+  const webWorkerControls = useWebWorker<BarsData[], GetBarsDataParams>({
     fn: getBarsData,
     initialValue: [],
     onMessageReceived: completedAudioProcessing,
   });
-
-  const debouncedOnResize = useDebounce(onResize);
 
   useEffect(() => {
     if (!canvasContainerRef.current) return;
@@ -243,7 +243,7 @@ const VoiceVisualizer = ({
     };
   }, [isRecordedCanvasHovered, isAvailableRecordedAudio]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (
       !bufferFromRecordedBlob ||
       !canvasRef.current ||
@@ -258,25 +258,29 @@ const VoiceVisualizer = ({
       return;
     }
 
+    const canvas = canvasRef.current;
     picksRef.current = [];
-    const bufferData = bufferFromRecordedBlob.getChannelData(0);
 
-    run({
-      bufferData,
+    const params: GetBarsDataParams = {
+      bufferData: bufferFromRecordedBlob.getChannelData(0),
       height: canvasCurrentHeight,
       width: canvasWidth,
       barWidth: formattedBarWidth,
       gap: formattedGap,
-    });
+    };
 
-    canvasRef.current?.addEventListener("mousemove", setCurrentHoveredOffsetX);
+    if (enableWebWorker) {
+      webWorkerControls.run(params);
+    } else {
+      const newBarsData = getBarsData(params);
+      setBarsData(newBarsData);
+      completedAudioProcessing();
+    }
+
+    canvas.addEventListener("mousemove", setCurrentHoveredOffsetX);
 
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      canvasRef.current?.removeEventListener(
-        "mousemove",
-        setCurrentHoveredOffsetX
-      );
+      canvas.removeEventListener("mousemove", setCurrentHoveredOffsetX);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -288,22 +292,24 @@ const VoiceVisualizer = ({
     isResizing,
   ]);
 
-  useEffect(() => {
-    if (
-      onlyRecording ||
-      !barsData?.length ||
-      !canvasRef.current ||
-      isProcessingRecordedAudio
-    )
+  useLayoutEffect(() => {
+    if (onlyRecording || !canvasRef.current || isProcessingRecordedAudio)
       return;
 
-    if (isCleared) {
+    if (isCleared && barsData && barsData.length > 0) {
       setBarsData([]);
+      if (enableWebWorker) webWorkerControls.setResult([]);
       return;
     }
 
+    const currentBarsData = enableWebWorker
+      ? webWorkerControls.result
+      : barsData;
+
+    if (!currentBarsData?.length) return;
+
     drawByBlob({
-      barsData,
+      barsData: currentBarsData,
       canvas: canvasRef.current,
       barWidth: formattedBarWidth,
       gap: formattedGap,
@@ -317,6 +323,7 @@ const VoiceVisualizer = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     barsData,
+    webWorkerControls.result,
     currentAudioTime,
     isCleared,
     rounded,
@@ -325,7 +332,7 @@ const VoiceVisualizer = ({
     secondaryBarColor,
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isProcessingRecordedAudio && canvasRef.current) {
       initialCanvasSetup({
         canvas: canvasRef.current,
