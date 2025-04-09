@@ -65,6 +65,7 @@ interface VoiceVisualizerProps {
   audioProcessingTextClassName?: string;
   controlButtonsClassName?: string;
   enableWebWorker?: boolean;
+  audioProcessingElem?: React.ReactNode;
 }
 
 const VoiceVisualizer = ({
@@ -127,6 +128,7 @@ const VoiceVisualizer = ({
   audioProcessingTextClassName,
   controlButtonsClassName,
   enableWebWorker = true,
+  audioProcessingElem,
 }: VoiceVisualizerProps) => {
   const [hoveredOffsetX, setHoveredOffsetX] = useState(0);
   const [canvasCurrentWidth, setCanvasCurrentWidth] = useState(0);
@@ -444,7 +446,9 @@ const VoiceVisualizer = ({
             }`}
             style={{ color: mainBarColor }}
           >
-            Processing Audio...
+            {audioProcessingElem !== undefined
+              ? audioProcessingElem
+              : "Processing Audio..."}
           </p>
         )}
         {isRecordedCanvasHovered &&
