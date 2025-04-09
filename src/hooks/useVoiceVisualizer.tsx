@@ -8,16 +8,6 @@ import {
 } from "../helpers";
 import { Controls, useVoiceVisualizerParams } from "../types/types.ts";
 
-// Global caches that persist across component instances
-const processedBlobCache = new WeakMap<
-  Blob,
-  {
-    audioSrc: string;
-    buffer: AudioBuffer;
-    duration: number;
-  }
->();
-
 function useVoiceVisualizer({
   onStartRecording,
   onStopRecording,
@@ -123,35 +113,12 @@ function useVoiceVisualizer({
       if (blob.size === 0) {
         throw new Error("Error: The audio blob is empty");
       }
-
-      const cached = processedBlobCache.get(blob);
-
-      if (cached) {
-        // For cached blobs, skip processing state entirely
-        setAudioSrc(cached.audioSrc);
-        setBufferFromRecordedBlob(cached.buffer);
-        setDuration(cached.duration - 0.06);
-        setError(null);
-        // Skip processing state for cached data
-        _setIsProcessingAudioOnComplete(false);
-        return;
-      }
-
-      _setIsProcessingAudioOnComplete(true);
       const audioSrcFromBlob = URL.createObjectURL(blob);
       setAudioSrc(audioSrcFromBlob);
 
       const audioBuffer = await blob.arrayBuffer();
       const audioContext = new AudioContext();
       const buffer = await audioContext.decodeAudioData(audioBuffer);
-
-      // Cache the processed results
-      processedBlobCache.set(blob, {
-        audioSrc: audioSrcFromBlob,
-        buffer,
-        duration: buffer.duration,
-      });
-
       setBufferFromRecordedBlob(buffer);
       setDuration(buffer.duration - 0.06);
 
