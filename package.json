@@ -1,12 +1,12 @@
 {
   "name": "react-voice-visualizer",
   "private": false,
-  "version": "2.0.8",
+  "version": "2.2.5",
   "type": "module",
-  "author": "Yurii Zarytskyi",
+  "author": "Yurii Zarytskyi & Neil Fisher",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YZarytskyi/react-voice-visualizer.git"
+    "url": "git+https://github.com/NeilTheFisher/react-voice-visualizer.git"
   },
   "description": "React library for audio recording and visualization using Web Audio API",
   "license": "MIT",
@@ -50,12 +50,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "prepare_release": "mkdir react-voice-visualizer && cp -r dist react-voice-visualizer && cp LICENSE package.json README.md react-voice-visualizer && tar -zcvf react-voice-visualizer.tar.gz react-voice-visualizer && rm -rf react-voice-visualizer",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "peerDependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.2",

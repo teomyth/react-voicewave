@@ -1,35 +1,35 @@
 import {
-  useState,
+  MouseEventHandler,
   useEffect,
   useLayoutEffect,
   useRef,
-  MouseEventHandler,
+  useState,
 } from "react";
 
 import {
-  drawByLiveStream,
   drawByBlob,
+  drawByLiveStream,
+  formatRecordedAudioTime,
+  formatToInlineStyleValue,
   getBarsData,
   initialCanvasSetup,
-  formatToInlineStyleValue,
-  formatRecordedAudioTime,
 } from "../helpers";
-import { useWebWorker } from "../hooks/useWebWorker.tsx";
 import { useDebounce } from "../hooks/useDebounce.tsx";
+import { useWebWorker } from "../hooks/useWebWorker.tsx";
 import {
+  BarItem,
   BarsData,
   Controls,
-  BarItem,
   GetBarsDataParams,
 } from "../types/types.ts";
 
 import "../index.css";
 
-import MicrophoneIcon from "../assets/MicrophoneIcon.tsx";
 import AudioWaveIcon from "../assets/AudioWaveIcon.tsx";
 import microphoneIcon from "../assets/microphone.svg";
-import playIcon from "../assets/play.svg";
+import MicrophoneIcon from "../assets/MicrophoneIcon.tsx";
 import pauseIcon from "../assets/pause.svg";
+import playIcon from "../assets/play.svg";
 import stopIcon from "../assets/stop.svg";
 
 interface VoiceVisualizerProps {
@@ -64,6 +64,7 @@ interface VoiceVisualizerProps {
   isAudioProcessingTextShown?: boolean;
   audioProcessingTextClassName?: string;
   controlButtonsClassName?: string;
+  audioProcessingElem?: React.ReactNode;
 }
 
 const VoiceVisualizer = ({
@@ -125,6 +126,7 @@ const VoiceVisualizer = ({
   isAudioProcessingTextShown = true,
   audioProcessingTextClassName,
   controlButtonsClassName,
+  audioProcessingElem,
 }: VoiceVisualizerProps) => {
   const [hoveredOffsetX, setHoveredOffsetX] = useState(0);
   const [canvasCurrentWidth, setCanvasCurrentWidth] = useState(0);
@@ -138,7 +140,7 @@ const VoiceVisualizer = ({
   const formattedSpeed = Math.trunc(speed);
   const formattedGap = Math.trunc(gap);
   const formattedBarWidth = Math.trunc(
-    isMobile && formattedGap > 0 ? barWidth + 1 : barWidth,
+    isMobile && formattedGap > 0 ? barWidth + 1 : barWidth
   );
   const unit = formattedBarWidth + formattedGap * formattedBarWidth;
 
@@ -275,7 +277,7 @@ const VoiceVisualizer = ({
       // eslint-disable-next-line react-hooks/exhaustive-deps
       canvasRef.current?.removeEventListener(
         "mousemove",
-        setCurrentHoveredOffsetX,
+        setCurrentHoveredOffsetX
       );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -342,15 +344,15 @@ const VoiceVisualizer = ({
 
     const roundedHeight =
       Math.trunc(
-        (canvasContainerRef.current.clientHeight * window.devicePixelRatio) / 2,
+        (canvasContainerRef.current.clientHeight * window.devicePixelRatio) / 2
       ) * 2;
 
     setCanvasCurrentWidth(canvasContainerRef.current.clientWidth);
     setCanvasCurrentHeight(roundedHeight);
     setCanvasWidth(
       Math.round(
-        canvasContainerRef.current.clientWidth * window.devicePixelRatio,
-      ),
+        canvasContainerRef.current.clientWidth * window.devicePixelRatio
+      )
     );
 
     setIsResizing(false);
@@ -377,7 +379,7 @@ const VoiceVisualizer = ({
   };
 
   const handleRecordedAudioCurrentTime: MouseEventHandler<HTMLCanvasElement> = (
-    e,
+    e
   ) => {
     if (audioRef?.current && canvasRef.current) {
       const newCurrentTime =
@@ -437,7 +439,9 @@ const VoiceVisualizer = ({
             }`}
             style={{ color: mainBarColor }}
           >
-            Processing Audio...
+            {audioProcessingElem !== undefined
+              ? audioProcessingElem
+              : "Processing Audio..."}
           </p>
         )}
         {isRecordedCanvasHovered &&
@@ -464,7 +468,7 @@ const VoiceVisualizer = ({
                     ${progressIndicatorTimeOnHoverClassName ?? ""}`}
                 >
                   {formatRecordedAudioTime(
-                    (duration / canvasCurrentWidth) * hoveredOffsetX,
+                    (duration / canvasCurrentWidth) * hoveredOffsetX
                   )}
                 </p>
               )}
